@@ -1,6 +1,6 @@
 ---
 - name: Query GitHub API
-  uri:
+  ansible.builtin.uri:
     url: "{{ code_server_git_releases_index }}"
     return_content: true
   register: __code_server_releases
