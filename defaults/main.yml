@@ -1,0 +1,21 @@
+---
+# Package-related defaults
+code_server_package_state: present
+code_server_package_version: latest
+
+# When installing the latest version, we use this to determine what the
+# latest version is.
+code_server_git_releases_index: https://api.github.com/repos/coder/code-server/releases
+
+# Service-related defaults
+code_server_service_state: started
+code_server_service_enabled: true
+
+# Code Server configuration settings
+code_server_listen_port: 8080
+code_server_listen_secure: 'false'
+code_server_auth_mode: password
+code_server_auth_password: password
+
+# User who should have an instance of code-server
+code_server_user: ''

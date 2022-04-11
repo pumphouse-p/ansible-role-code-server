@@ -1,0 +1,42 @@
+---
+galaxy_info:
+  author: Devin Parrish
+  role_name: code_server
+  namespace: pumphouse_p
+  description: Install Code-Server
+
+  license: GPL
+
+  min_ansible_version: 2.9
+
+  galaxy_tags:
+    - development
+    - codeserver
+    - vscode
+
+  platforms:
+    - name: EL
+      versions:
+        - 8
+        - 9
+    - name: Fedora
+      versions:
+        - 30
+        - 31
+        - 32
+        - 33
+        - 34
+        - 35
+        - 36
+    - name: Ubuntu
+      versions:
+        - xenial
+        - bionic
+        - focal
+    - name: Debian
+      versions:
+        - stretch
+        - buster
+        - bullseye
+
+dependencies: []

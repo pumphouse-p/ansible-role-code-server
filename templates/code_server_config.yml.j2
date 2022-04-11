@@ -1,0 +1,4 @@
+bind-addr: {{ ansible_default_ipv4.address }}:{{ code_server_listen_port }}
+auth: password
+password: {{ code_server_auth_password }}
+cert: {{ code_server_listen_secure }}

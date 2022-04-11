@@ -1,0 +1,99 @@
+---
+- name: Query GitHub API
+  uri:
+    url: "{{ code_server_git_releases_index }}"
+    return_content: true
+  register: __code_server_releases
+
+- name: Set version fact when installing 'latest'
+  ansible.builtin.set_fact:
+    _code_server_install_version: "{{ __code_server_releases.json | json_query(query) }}"
+  vars:
+    query: "[0].name"
+  when: code_server_package_version == 'latest'
+
+- name: Set version fact when installing specific version
+  ansible.builtin.set_fact:
+    _code_server_install_version: "{{ code_server_package_version }}"
+  when: code_server_package_version != 'latest'
+
+- name: Sanitize version string
+  ansible.builtin.set_fact:
+    _code_server_install_version: "{{ _code_server_install_version | regex_replace('^v', '') }}"
+
+- name: Debug version string
+  ansible.builtin.debug:
+    var: _code_server_install_version
+
+- name: Set package facts
+  ansible.builtin.set_fact:
+    _pkg_query_os: "{{ _pkg_extensions[ansible_os_family] }}"
+    _pkg_query_arch: "{{ _cpu_arch[ansible_architecture] }}"
+
+- name: Set destination file fact
+  ansible.builtin.set_fact:
+    _pkg_dest_file: "/tmp/code-server_{{ _code_server_install_version }}_{{ _pkg_query_arch }}.{{ _pkg_query_os }}"
+
+- name: Set query string
+  ansible.builtin.set_fact:
+    _pkg_query_string: "{{ _code_server_install_version + '-' + _pkg_query_arch + '.' + _pkg_query_os }}"
+
+- name: Debug query string
+  ansible.builtin.debug:
+    var: _pkg_query_string
+
+- name: Determine URL for package
+  ansible.builtin.set_fact:
+    _pkg_download_url: "{{ __code_server_releases.json | json_query(query) | select() | flatten }}"
+  vars:
+    query: "[*].assets[?browser_download_url.contains(@, '{{ _pkg_query_string }}' )].browser_download_url"
+
+- name: Debug package download URL
+  ansible.builtin.debug:
+    var: _pkg_download_url.0
+
+- name: Create configuration directory for enabled user
+  ansible.builtin.file:
+    dest: "~{{ code_server_user }}/.config/code-server"
+    state: directory
+    owner: "{{ code_server_user }}"
+    group: "{{ code_server_user }}"
+    mode: 0755
+
+- name: Write configuration file for enabled user
+  ansible.builtin.template:
+    src: code_server_config.yml.j2
+    dest: "~{{ code_server_user }}/.config/code-server/config.yaml"
+    owner: "{{ code_server_user }}"
+    mode: 0644
+  become: true
+  become_user: "{{ code_server_user }}"
+  notify: restart code_server
+
+- name: Download package
+  ansible.builtin.uri:
+    url: "{{ _pkg_download_url.0 }}"
+    dest: "{{ _pkg_dest_file }}"
+    creates: "{{ _pkg_dest_file }}"
+
+# Installing with the distro-specific package modules because the generic
+# `package` module doesn't support disabling of gpg checks.
+
+- name: Install RPM
+  ansible.builtin.dnf:
+    name: "{{ _pkg_dest_file }}"
+    state: present
+    disable_gpg_check: true
+  when: ansible_os_family == 'RedHat'
+
+- name: Install DEB
+  ansible.builtin.apt:
+    name: "{{ _pkg_dest_file }}"
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Configure service
+  ansible.builtin.service:
+    name: "code-server@{{ code_server_user }}"
+    state: "{{ code_server_service_state }}"
+    enabled: "{{ code_server_service_enabled }}"

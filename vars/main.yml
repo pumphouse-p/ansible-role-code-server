@@ -1,0 +1,7 @@
+---
+_pkg_extensions:
+  Debian: 'deb'
+  RedHat: 'rpm'
+
+_cpu_arch:
+  x86_64: 'amd64'

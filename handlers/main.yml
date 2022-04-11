@@ -1,0 +1,6 @@
+---
+- name: restart code_server
+  ansible.builtin.service:
+    name: code-server@{{ code_server_user }}
+    state: restarted
+  ignore_errors: "{{ ansible_check_mode }}"
